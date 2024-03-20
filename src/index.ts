@@ -9,7 +9,28 @@ app.use(cors());
 
 // Create a new user
 app.post('/users/new', async (req: Request, res: Response) => {
-  res.send('User created');
+  const newUser = {
+    email: 'test@example3.com',
+    password: 'password',
+    userName: 'testuser3',
+    firstName: 'Test',
+    lastName: 'User',
+  }
+
+  const result = await db.query(`
+    INSERT INTO users (email, password, userName, firstName, lastName)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, email, userName;
+    `, [newUser.email, newUser.password, newUser.userName, newUser.firstName, newUser.lastName]
+  );
+
+  const responseValue = result.rows[0];
+
+  res.status(201).json({
+    id: responseValue.id,
+    email: responseValue.email,
+    userName: responseValue.userName,
+  });
 });
 
 // Edit a user
