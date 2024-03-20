@@ -1,5 +1,7 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
+import { PORT } from './config';
+import { db } from './db';
 
 const app = express();
 app.use(express.json());
@@ -20,8 +22,6 @@ app.get('/users', async (req: Request, res: Response) => {
   res.send('User found');
 });
 
-const port = process.env.PORT || 3000;
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
