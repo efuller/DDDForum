@@ -35,48 +35,38 @@ app.post('/users/new', async (req: Request, res: Response) => {
     return;
   }
 
-  // Check to see if the username has already been used.
   try {
-    const result = await db.query(`
+    // Check to see if the username has already been used.
+    const userNameTaken = await db.query(`
     SELECT username
     FROM users
     WHERE username = $1;
     `, [newUser.userName]
     );
-    if (result.rows.length > 0) {
-      res.status(409).json({
+    if (userNameTaken.rows.length > 0) {
+     return res.status(409).json({
         error: 'UsernameAlreadyTaken',
         data: undefined,
         success: false,
       });
-      return;
     }
-  } catch (error: unknown) {
-    res.status(500).json({
-      error: 'ServerError',
-      data: undefined,
-      success: false,
-    });
-  }
 
-  // Check to see if the user email has already been used.
-  try {
-    const result = await db.query(`
+    // Check to see if the user email has already been used.
+    const emailAlreadyInUse = await db.query(`
     SELECT email
     FROM users
     WHERE email = $1;
     `, [newUser.email]
     );
-    if (result.rows.length > 0) {
-      res.status(409).json({
+    if (emailAlreadyInUse.rows.length > 0) {
+      return res.status(409).json({
         error: 'EmailAlreadyInUse',
         data: undefined,
         success: false,
       });
-      return;
     }
   } catch (error: unknown) {
-    res.status(500).json({
+    return res.status(500).json({
       error: 'ServerError',
       data: undefined,
       success: false,
