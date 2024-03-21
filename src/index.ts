@@ -65,15 +65,8 @@ app.post('/users/new', async (req: Request, res: Response) => {
         success: false,
       });
     }
-  } catch (error: unknown) {
-    return res.status(500).json({
-      error: 'ServerError',
-      data: undefined,
-      success: false,
-    });
-  }
 
-  try {
+    // Insert the new user into the database
     const result = await db.query(`
     INSERT INTO users (email, password, userName, firstName, lastName)
     VALUES ($1, $2, $3, $4, $5)
@@ -94,13 +87,11 @@ app.post('/users/new', async (req: Request, res: Response) => {
       success: true,
     });
   } catch (error: unknown) {
-    res.status(500).json({
+    return res.status(500).json({
       error: 'ServerError',
       data: undefined,
       success: false,
     });
-  } finally {
-    await db.end();
   }
 });
 
