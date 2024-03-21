@@ -80,16 +80,16 @@ app.post('/users/new', async (req: Request, res: Response) => {
     RETURNING id, email, userName;
     `, [newUser.email, newUser.password, newUser.userName, newUser.firstName, newUser.lastName]
     );
-    const responseValue = result.rows[0];
+    const user = result.rows[0];
 
     res.status(201).json({
       error: undefined,
       data: {
-        id: responseValue.id,
-        email: responseValue.email,
-        userName: responseValue.userName,
-        firstName: responseValue.firstName,
-        lastName: responseValue.lastName,
+        id: user.id,
+        email: user.email,
+        userName: user.userName,
+        firstName: user.firstName,
+        lastName: user.lastName,
       },
       success: true,
     });
