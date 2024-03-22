@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import { PORT } from './config';
 import { db } from './db';
+import { create } from "node:domain";
 
 // Function to generate a random password
 function generatePassword() {
@@ -96,8 +97,104 @@ app.post('/users/new', async (req: Request, res: Response) => {
 });
 
 // Edit a user
-app.post('users/edit/:userId', async (req: Request, res: Response) => {
-  res.send('User edited');
+app.post('/users/edit/:userId', async (req: Request, res: Response) => {
+  const userId = req.params.userId;
+  const user = req.body;
+
+  if (!user.email && !user.userName && !user.firstName && !user.lastName) {
+    return res.status(400).json({
+      error: 'ValidationError',
+      data: undefined,
+      success: false,
+    });
+  }
+
+  try {
+    // Check to see if the user exists
+    const userExists = await db.query(`
+    SELECT id
+    FROM users
+    WHERE id = $1;
+    `, [userId]
+    );
+    if (userExists.rows.length === 0) {
+      return res.status(404).json({
+        error: 'UserNotFound',
+        data: undefined,
+        success: false,
+      });
+    }
+
+    // Check to see if the username has already been used.
+    const userNameTaken = await db.query(`
+    SELECT username
+    FROM users
+    WHERE username = $1;
+    `, [user.userName]
+    );
+    if (userNameTaken.rows.length > 0) {
+      return res.status(409).json({
+        error: 'UsernameAlreadyTaken',
+        data: undefined,
+        success: false,
+      });
+    }
+
+    // Check to see if the user email has already been used.
+    const emailAlreadyInUse = await db.query(`
+    SELECT email
+    FROM users
+    WHERE email = $1;
+    `, [user.email]
+    );
+    if (emailAlreadyInUse.rows.length > 0) {
+      return res.status(409).json({
+        error: 'EmailAlreadyInUse',
+        data: undefined,
+        success: false,
+      });
+    }
+
+    // Create a function that will create the update query with the correct fields
+    const createUpdateQuery = (user: any) => {
+      const fields = Object.keys(user);
+      const values = Object.values(user);
+      let query = `UPDATE users SET `;
+      for (let i = 0; i < fields.length; i++) {
+        if (i === fields.length - 1) {
+          query += `${fields[i]} = $${i + 1} `;
+        } else {
+          query += `${fields[i]} = $${i + 1}, `;
+        }
+      }
+      query += `WHERE id = ${userId} RETURNING id, email, userName, firstName, lastName;`;
+      return query;
+    }
+
+    // Update the user in the database
+    const updatedUserResult = await db.query(createUpdateQuery(user), Object.values(user));
+
+    const foundUser = updatedUserResult.rows[0];
+
+    res.status(201).json({
+      error: undefined,
+      data: {
+        id: foundUser.id,
+        email: foundUser.email,
+        userName: foundUser.userName,
+        firstName: foundUser.firstName,
+        lastName: foundUser.lastName,
+      },
+      success: true,
+    });
+  } catch (error: unknown) {
+    console.log(error);
+    return res.status(500).json({
+      error: 'ServerError',
+      data: undefined,
+      success: false,
+    });
+  }
 });
 
 // Get user by email
