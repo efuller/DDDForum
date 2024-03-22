@@ -2,7 +2,13 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import { PORT } from './config';
 import { db } from './db';
-import { create } from "node:domain";
+
+/**--------------Helpers--------------**/
+
+function isValidEmail(email: string) {
+  const regex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return regex.test(String(email).toLowerCase());
+}
 
 // Function to generate a random password
 function generatePassword() {
@@ -15,9 +21,13 @@ function generatePassword() {
   return password;
 }
 
+/**--------------App--------------**/
+
 const app = express();
 app.use(express.json());
 app.use(cors());
+
+/**--------------Routes--------------**/
 
 // Create a new user
 app.post('/users/new', async (req: Request, res: Response) => {
@@ -37,7 +47,6 @@ app.post('/users/new', async (req: Request, res: Response) => {
   }
 
   try {
-    // Check to see if the username has already been used.
     const userNameTaken = await db.query(`
     SELECT username
     FROM users
@@ -52,7 +61,6 @@ app.post('/users/new', async (req: Request, res: Response) => {
       });
     }
 
-    // Check to see if the user email has already been used.
     const emailAlreadyInUse = await db.query(`
     SELECT email
     FROM users
@@ -67,7 +75,6 @@ app.post('/users/new', async (req: Request, res: Response) => {
       });
     }
 
-    // Insert the new user into the database
     const result = await db.query(`
     INSERT INTO users (email, password, userName, firstName, lastName)
     VALUES ($1, $2, $3, $4, $5)
@@ -96,7 +103,6 @@ app.post('/users/new', async (req: Request, res: Response) => {
   }
 });
 
-// Edit a user
 app.post('/users/edit/:userId', async (req: Request, res: Response) => {
   const userId = req.params.userId;
   const user = req.body;
@@ -110,7 +116,6 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
   }
 
   try {
-    // Check to see if the user exists
     const userExists = await db.query(`
     SELECT id
     FROM users
@@ -125,7 +130,6 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
       });
     }
 
-    // Check to see if the username has already been used.
     const userNameTaken = await db.query(`
     SELECT username
     FROM users
@@ -140,7 +144,6 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
       });
     }
 
-    // Check to see if the user email has already been used.
     const emailAlreadyInUse = await db.query(`
     SELECT email
     FROM users
@@ -155,7 +158,6 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
       });
     }
 
-    // Create a function that will create the update query with the correct fields
     const createUpdateQuery = (user: any) => {
       const fields = Object.keys(user);
       const values = Object.values(user);
@@ -171,7 +173,6 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
       return query;
     }
 
-    // Update the user in the database
     const updatedUserResult = await db.query(createUpdateQuery(user), Object.values(user));
 
     const foundUser = updatedUserResult.rows[0];
@@ -197,9 +198,52 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
   }
 });
 
-// Get user by email
 app.get('/users', async (req: Request, res: Response) => {
-  res.send('User found');
+  const email = req.query.email;
+  console.log(email);
+
+  if (!email || !isValidEmail(email.toString())) {
+    return res.status(400).json({
+      error: 'ValidationError',
+      data: undefined,
+      success: false,
+    });
+  }
+
+  try {
+    const foundUser = await db.query(`
+    SELECT id, email, userName, firstName, lastName
+    FROM users
+    WHERE email = $1;
+    `, [email.toString()]
+    );
+    if (foundUser.rows.length === 0) {
+      return res.status(404).json({
+        error: 'UserNotFound',
+        data: undefined,
+        success: false,
+      });
+    } else {
+      const user = foundUser.rows[0];
+      return res.status(200).json({
+        error: undefined,
+        data: {
+          id: user.id,
+          email: user.email,
+          userName: user.username,
+          firstName: user.firstname,
+          lastName: user.lastname,
+        },
+        success: true,
+      });
+    }
+  } catch (error: unknown) {
+    return res.status(500).json({
+      error: 'ServerError',
+      data: undefined,
+      success: false,
+    });
+  }
 });
 
 app.listen(PORT, () => {
