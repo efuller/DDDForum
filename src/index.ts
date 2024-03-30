@@ -21,8 +21,98 @@ function generatePassword() {
   return password;
 }
 
+/**--------------User Service--------------**/
+
+class UserService {
+  public async createUser(newUser: { email: string, password: string, userName: string, firstName: string, lastName: string }) {
+    const result = await db.query(`
+    INSERT INTO users (email, password, userName, firstName, lastName)
+    VALUES ($1, $2, $3, $4, $5)
+    RETURNING id, email, userName;
+    `, [newUser.email, newUser.password, newUser.userName, newUser.firstName, newUser.lastName]
+    );
+    return result.rows[0];
+  }
+
+  public async emailAlreadyInUse(email: string) {
+    const emailAlreadyInUse = await db.query(`
+    SELECT email
+    FROM users
+    WHERE email = $1;
+    `, [email]
+    );
+
+    if (emailAlreadyInUse.rows.length > 0) {
+      return true;
+    }
+    return false;
+  }
+
+  public async getUserById(userId: string) {
+    const userExists = await db.query(`
+    SELECT id
+    FROM users
+    WHERE id = $1;
+    `, [userId]
+    );
+
+    if (userExists.rows.length > 0) {
+      return true;
+    }
+    return false;
+  }
+
+  public async userNameTaken(userName: string) {
+    const userNameTaken = await db.query(`
+    SELECT username
+    FROM users
+    WHERE username = $1;
+    `, [userName]
+    );
+
+    if (userNameTaken.rows.length > 0) {
+      return true;
+    }
+    return false;
+  }
+
+  public async updateUser(user: { id: string, email?: string, userName?: string, firstName?: string, lastName?: string }) {
+    const createUpdateQuery = (user: any) => {
+      const fields = Object.keys(user);
+      const values = Object.values(user);
+      let query = `UPDATE users SET `;
+      for (let i = 0; i < fields.length; i++) {
+        if (i === fields.length - 1) {
+          query += `${fields[i]} = $${i + 1} `;
+        } else {
+          query += `${fields[i]} = $${i + 1}, `;
+        }
+      }
+      query += `WHERE id = ${user.id} RETURNING id, email, userName, firstName, lastName;`;
+      return query;
+    }
+
+    const updatedUserResult = await db.query(createUpdateQuery(user), Object.values(user));
+    return updatedUserResult.rows[0];
+  }
+
+  public async getUserByEmail(email: string) {
+    const foundUser = await db.query(`
+    SELECT id, email, userName, firstName, lastName
+    FROM users
+    WHERE email = $1;
+    `, [email.toString()]
+    );
+    if (foundUser.rows.length === 0) {
+      return false;
+    }
+    return foundUser.rows[0];
+  }
+}
+
 /**--------------App--------------**/
 
+const userService = new UserService();
 const app = express();
 app.use(express.json());
 app.use(cors());
@@ -47,13 +137,8 @@ app.post('/users/new', async (req: Request, res: Response) => {
   }
 
   try {
-    const userNameTaken = await db.query(`
-    SELECT username
-    FROM users
-    WHERE username = $1;
-    `, [newUser.userName]
-    );
-    if (userNameTaken.rows.length > 0) {
+    const userNameTaken = await userService.userNameTaken(newUser.userName);
+    if (userNameTaken) {
      return res.status(409).json({
         error: 'UsernameAlreadyTaken',
         data: undefined,
@@ -61,13 +146,8 @@ app.post('/users/new', async (req: Request, res: Response) => {
       });
     }
 
-    const emailAlreadyInUse = await db.query(`
-    SELECT email
-    FROM users
-    WHERE email = $1;
-    `, [newUser.email]
-    );
-    if (emailAlreadyInUse.rows.length > 0) {
+    const emailAlreadyInUse = await userService.emailAlreadyInUse(newUser.email);
+    if (emailAlreadyInUse) {
       return res.status(409).json({
         error: 'EmailAlreadyInUse',
         data: undefined,
@@ -75,14 +155,7 @@ app.post('/users/new', async (req: Request, res: Response) => {
       });
     }
 
-    const result = await db.query(`
-    INSERT INTO users (email, password, userName, firstName, lastName)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING id, email, userName;
-    `, [newUser.email, newUser.password, newUser.userName, newUser.firstName, newUser.lastName]
-    );
-    const user = result.rows[0];
-
+    const user = await userService.createUser(newUser);
     res.status(201).json({
       error: undefined,
       data: {
@@ -116,13 +189,8 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
   }
 
   try {
-    const userExists = await db.query(`
-    SELECT id
-    FROM users
-    WHERE id = $1;
-    `, [userId]
-    );
-    if (userExists.rows.length === 0) {
+    const userExists = await userService.getUserById(userId);
+    if (!userExists) {
       return res.status(404).json({
         error: 'UserNotFound',
         data: undefined,
@@ -130,13 +198,8 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
       });
     }
 
-    const userNameTaken = await db.query(`
-    SELECT username
-    FROM users
-    WHERE username = $1;
-    `, [user.userName]
-    );
-    if (userNameTaken.rows.length > 0) {
+    const userNameTaken = await userService.userNameTaken(user.userName);
+    if (userNameTaken) {
       return res.status(409).json({
         error: 'UsernameAlreadyTaken',
         data: undefined,
@@ -144,13 +207,8 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
       });
     }
 
-    const emailAlreadyInUse = await db.query(`
-    SELECT email
-    FROM users
-    WHERE email = $1;
-    `, [user.email]
-    );
-    if (emailAlreadyInUse.rows.length > 0) {
+    const emailAlreadyInUse = await userService.emailAlreadyInUse(user.email);
+    if (emailAlreadyInUse) {
       return res.status(409).json({
         error: 'EmailAlreadyInUse',
         data: undefined,
@@ -158,33 +216,16 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
       });
     }
 
-    const createUpdateQuery = (user: any) => {
-      const fields = Object.keys(user);
-      const values = Object.values(user);
-      let query = `UPDATE users SET `;
-      for (let i = 0; i < fields.length; i++) {
-        if (i === fields.length - 1) {
-          query += `${fields[i]} = $${i + 1} `;
-        } else {
-          query += `${fields[i]} = $${i + 1}, `;
-        }
-      }
-      query += `WHERE id = ${userId} RETURNING id, email, userName, firstName, lastName;`;
-      return query;
-    }
-
-    const updatedUserResult = await db.query(createUpdateQuery(user), Object.values(user));
-
-    const foundUser = updatedUserResult.rows[0];
+    const updatedUser = await userService.updateUser({ id: userId, ...user });
 
     res.status(201).json({
       error: undefined,
       data: {
-        id: foundUser.id,
-        email: foundUser.email,
-        userName: foundUser.userName,
-        firstName: foundUser.firstName,
-        lastName: foundUser.lastName,
+        id: updatedUser.id,
+        email: updatedUser.email,
+        userName: updatedUser.userName,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
       },
       success: true,
     });
@@ -200,7 +241,6 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
 
 app.get('/users', async (req: Request, res: Response) => {
   const email = req.query.email;
-  console.log(email);
 
   if (!email || !isValidEmail(email.toString())) {
     return res.status(400).json({
@@ -211,20 +251,14 @@ app.get('/users', async (req: Request, res: Response) => {
   }
 
   try {
-    const foundUser = await db.query(`
-    SELECT id, email, userName, firstName, lastName
-    FROM users
-    WHERE email = $1;
-    `, [email.toString()]
-    );
-    if (foundUser.rows.length === 0) {
+    const user = await userService.getUserByEmail(email.toString());
+    if (!user) {
       return res.status(404).json({
         error: 'UserNotFound',
         data: undefined,
         success: false,
       });
     } else {
-      const user = foundUser.rows[0];
       return res.status(200).json({
         error: undefined,
         data: {
