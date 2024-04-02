@@ -23,26 +23,6 @@ function generatePassword() {
   return password;
 }
 
-function filterDefinedProperties<T extends object>(obj: T): Partial<T> {
-  const definedProps: Partial<Record<keyof T, T[keyof T]>> = {};
-
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      // Use a type assertion here to tell TypeScript that `key` is indeed a key of T
-      const typedKey = key as keyof T;
-      const value = obj[typedKey];
-
-      if (value !== undefined) {
-        // Now TypeScript knows that definedProps has the same keys as T,
-        // and the values are of the same type as those in T
-        definedProps[typedKey] = value;
-      }
-    }
-  }
-
-  // A type assertion to cast the result back to Partial<T>
-  return definedProps as Partial<T>;
-}
 
 /**--------------User Service--------------**/
 
@@ -80,7 +60,7 @@ class UserService {
   }
 
   public async updateUser(user: NewUser) {
-    const definedProps = filterDefinedProperties(user);
+    const definedProps = this.filterDefinedProperties(user);
     const updatedUser = await db.update(users).set(definedProps).where(eq(users.id, Number(user.id))).returning();
     return updatedUser[0];
   }
@@ -91,6 +71,27 @@ class UserService {
       return null;
     }
     return foundUser[0];
+  }
+
+  public filterDefinedProperties<T extends object>(obj: T): Partial<T> {
+    const definedProps: Partial<Record<keyof T, T[keyof T]>> = {};
+
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        // Use a type assertion here to tell TypeScript that `key` is indeed a key of T
+        const typedKey = key as keyof T;
+        const value = obj[typedKey];
+
+        if (value !== undefined) {
+          // Now TypeScript knows that definedProps has the same keys as T,
+          // and the values are of the same type as those in T
+          definedProps[typedKey] = value;
+        }
+      }
+    }
+
+    // A type assertion to cast the result back to Partial<T>
+    return definedProps as Partial<T>;
   }
 }
 
