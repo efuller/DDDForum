@@ -1,11 +1,12 @@
 import { Client } from 'pg';
 import { getDBUri } from './config';
+import { drizzle } from "drizzle-orm/node-postgres";
 
-const db = new Client({
+const client = new Client({
     connectionString: getDBUri()
 });
 
-db.connect((err) => {
+client.connect((err) => {
     if (err) {
         console.error('Error connecting to database', err.stack);
     } else {
@@ -13,4 +14,5 @@ db.connect((err) => {
     }
 });
 
+const db = drizzle(client);
 export { db };
