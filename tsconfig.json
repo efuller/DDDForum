@@ -3,15 +3,14 @@
     "baseUrl": "./",
     "target": "esnext",
     "module": "commonjs",
-    "lib": ["es6"],
-    "allowJs": true,
     "strict": true,
     "esModuleInterop": true,
     "types": ["node", "jest"],
     "skipLibCheck": true
   },
   "include": [
-    "packages/api/src/**/*"
+    "packages/api/src/**/*",
+    "packages/web/src/**/*"
   ],
   "exclude": [
     "packages/api/src/**/*.spec.ts"
