@@ -1,24 +1,12 @@
-import { Button } from "@/components/ui/button.tsx";
+import { RegistrationForm } from "@/components/registrationForm.tsx";
 
 export const RegisterPage = () => {
   return (
-    <div>
-      <h1>Register</h1>
-      <form>
-        <div>
-          <label htmlFor="email">Email</label>
-          <input type="email" id="email" />
-        </div>
-        <div>
-          <label htmlFor="username">Username</label>
-          <input type="text" id="username" />
-        </div>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input type="password" id="password" />
-        </div>
-        <Button type="submit">Register</Button>
-      </form>
+    <div className="py-10">
+      <h1 className="pb-8 text-4xl">Register</h1>
+      <div className="flex justify-center w-full">
+        <RegistrationForm />
+      </div>
     </div>
   );
 }
