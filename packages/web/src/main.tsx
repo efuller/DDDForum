@@ -1,7 +1,7 @@
 import { RouterProvider } from "react-router-dom";
 import ReactDOM from 'react-dom/client'
 import { router } from "@/routes.tsx";
-import { UserProvider } from "@/contexts/userContext.tsx";
+import { UserProvider } from "@/shared/contexts/userContext.tsx";
 
 import './index.css'
 import './App.css';
