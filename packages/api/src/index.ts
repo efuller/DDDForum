@@ -27,7 +27,7 @@ function generatePassword() {
 /**--------------User Service--------------**/
 
 class UserService {
-  public async createUser(newUser: { email: string, password: string, userName: string, firstName: string, lastName: string }) {
+  public async createUser(newUser: { email: string, password: string, userName: string, firstName?: string, lastName?: string }) {
     const result = await db.insert(users).values(newUser).returning();
     return result[0];
   }
