@@ -21,10 +21,14 @@ const formSchema = z.object({
   lastName: z.union([z.string().min(3), z.undefined()]).optional(),
 });
 
-type FormData = z.infer<typeof formSchema>;
+export type RegistrationFormData = z.infer<typeof formSchema>;
 
-export function RegistrationForm() {
-  const form = useForm<FormData>({
+interface RegistrationFormProps {
+  onSubmit: (data: RegistrationFormData) => void;
+}
+
+export function RegistrationForm({ onSubmit }: RegistrationFormProps) {
+  const form = useForm<RegistrationFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
@@ -32,14 +36,14 @@ export function RegistrationForm() {
     },
   })
 
-  function onSubmit(formData: FormData) {
-    console.log('formData', formData);
+  async function handleOnSubmit(formData: RegistrationFormData) {
+    onSubmit(formData);
   }
 
   return (
     <div className="w-1/2">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="text-left space-y-8">
+        <form onSubmit={form.handleSubmit(handleOnSubmit)} className="text-left space-y-8">
           <FormField
             control={form.control}
             name="userName"

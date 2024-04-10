@@ -13,7 +13,7 @@ export const apiClient = {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to register');
+      throw new Error('Failed to register user');
     }
 
     return response.json();
