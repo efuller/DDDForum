@@ -1,18 +1,29 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { RegistrationForm, RegistrationFormData } from "@/components/registrationForm.tsx";
 import { apiClient } from "@/shared/apiClient";
-import { toast } from "sonner";
-import { useState } from "react";
 
 export const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate()
   const onSubmit = async (data: RegistrationFormData) => {
     try {
       setLoading(true);
-      await apiClient.register(data);
+      const result = await apiClient.register(data);
+
+      if (result.success) {
+        toast.success('Account registered successfully');
+        setTimeout(() => {
+          setLoading(false);
+          navigate('/');
+        }, 3000);
+      } else {
+        toast.error('There was an error registering the account');
+      }
     } catch (e) {
       toast.error('There was an error registering the account');
       console.error(`There was an error registering the account, ${e}`);
-    } finally {
       setLoading(false);
     }
   }
