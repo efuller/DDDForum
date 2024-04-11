@@ -12,8 +12,8 @@ import {
   FormMessage
 } from "@/components/ui/form.tsx";
 import { Input } from "@/components/ui/input.tsx";
+import { Loader } from "@/components/loader";
 
-// email, userName, firstName, lastName
 const formSchema = z.object({
   email: z.string().email(),
   userName: z.string().min(3),
@@ -25,9 +25,10 @@ export type RegistrationFormData = z.infer<typeof formSchema>;
 
 interface RegistrationFormProps {
   onSubmit: (data: RegistrationFormData) => void;
+  loading: boolean;
 }
 
-export function RegistrationForm({ onSubmit }: RegistrationFormProps) {
+export function RegistrationForm({ loading, onSubmit }: RegistrationFormProps) {
   const form = useForm<RegistrationFormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -99,7 +100,15 @@ export function RegistrationForm({ onSubmit }: RegistrationFormProps) {
               </FormItem>
             )}
           />
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={loading} className="min-w-20">
+            {
+              loading ? (
+                <Loader />
+              ) : 'Submit'
+            }
+          </Button>
+          <div>
+          </div>
         </form>
       </Form>
     </div>

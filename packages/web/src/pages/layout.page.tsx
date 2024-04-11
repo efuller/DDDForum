@@ -1,6 +1,7 @@
 import { Link, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import LogoImage from '../assets/dddforumlogo.png';
+import { Toaster } from "sonner";
 
 const Logo = () => (
   <div>
@@ -55,6 +56,7 @@ export const Layout = () => {
       <main>
         <Outlet/>
       </main>
+      <Toaster />
     </div>
   )
 }
