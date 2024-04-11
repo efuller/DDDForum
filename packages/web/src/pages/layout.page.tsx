@@ -2,6 +2,7 @@ import { Link, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button.tsx";
 import LogoImage from '../assets/dddforumlogo.png';
 import { Toaster } from "sonner";
+import { useUserContext } from "@/shared/contexts/userContext.tsx";
 
 const Logo = () => (
   <div>
@@ -20,7 +21,7 @@ const TitleAndSubmission = () => (
 const HeaderActionButton = ({ user }: { user: any }) => (
   <div>
     {
-      user ? (
+      user && user.userName ? (
         <Button>
           {`${user.userName} / Logout`}
         </Button>
@@ -33,8 +34,8 @@ const HeaderActionButton = ({ user }: { user: any }) => (
   </div>
 );
 
-const shouldShowActionButton = (pathName: string) => {
-  return pathName !== '/join';
+const shouldShowActionButton = (user: any) => {
+  return user && user.userName;
 }
 
 export const Header = ({user}: {user: any}) => (
@@ -42,17 +43,18 @@ export const Header = ({user}: {user: any}) => (
     <Logo/>
     <TitleAndSubmission/>
     {
-      shouldShowActionButton(window.location.pathname) ? (
+      shouldShowActionButton(user) ? (
         <HeaderActionButton user={user}/>
-      ) : null
+      ) : <HeaderActionButton user={null} />
     }
   </header>
 )
 
 export const Layout = () => {
+  const { user } = useUserContext();
   return (
     <div>
-      <Header user={null} />
+      <Header user={user} />
       <main>
         <Outlet/>
       </main>

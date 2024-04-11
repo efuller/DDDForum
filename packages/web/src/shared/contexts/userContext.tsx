@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState } from "react";
 
 interface UserData {
+  id?: number
   userName: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
+  firstName?: string | null;
+  lastName?: string | null;
 }
 
 const UserContext = createContext<{
