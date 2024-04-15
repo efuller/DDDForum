@@ -1,4 +1,4 @@
-import { integer, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { AnyPgColumn, integer, pgTable, serial, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { relations } from "drizzle-orm";
 
 export const users = pgTable('users', {
@@ -53,12 +53,17 @@ export const comments = pgTable('comments', {
     text: text('text').notNull(),
     memberId: integer('member_id').notNull().references(() => members.id),
     postId: integer('post_id').notNull().references(() => posts.id),
+    replyComments: integer('reply_to').references((): AnyPgColumn => comments.id),
 });
 
 export const commentRelations = relations(comments, ({one}) => ({
     memberPostedBy: one(members, {
         fields: [comments.memberId],
         references: [members.id]
+    }),
+    post: one(posts, {
+        fields: [comments.postId],
+        references: [posts.id]
     }),
 }));
 
@@ -73,5 +78,9 @@ export const votesRelations = relations(votes, ({one}) => ({
     memberPostedBy: one(members, {
         fields: [votes.memberId],
         references: [members.id]
+    }),
+    post: one(posts, {
+        fields: [votes.postId],
+        references: [posts.id]
     }),
 }));
