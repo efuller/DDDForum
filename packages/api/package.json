@@ -7,12 +7,13 @@
   "scripts": {
     "build": "rimraf ./dist && tsc",
     "start:dev": "npx nodemon",
-    "start": "npm run build && node ../../build/index.js",
-    "lint": "../../node_modules/.bin/eslint . --ext .ts",
-    "test": "../../node_modules/.bin/jest",
-    "test:dev": "../../node_modules/.bin/jest --watchAll",
+    "start": "npm run build && node ./build/index.js",
+    "lint": "eslint . --ext .ts",
+    "test": "jest",
+    "test:dev": "jest --watchAll",
     "db:start": "docker-compose up -d --wait --build",
-    "db:push": "../../node_modules/.bin/drizzle-kit push:pg"
+    "db:push": "drizzle-kit push:pg",
+    "db:studio": "drizzle-kit studio"
   },
   "husky": {
     "hooks": {
