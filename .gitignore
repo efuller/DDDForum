@@ -1,0 +1,7 @@
+node_modules
+build
+db_data
+.env**
+users.http
+notes.md
+dist
