@@ -1,6 +1,7 @@
 node_modules
-package-lock.json
 build
 db_data
 .env**
 users.http
+notes.md
+dist

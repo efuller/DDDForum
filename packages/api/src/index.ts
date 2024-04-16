@@ -2,6 +2,8 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import { PORT } from './config';
 import { db } from './db';
+import { eq } from "drizzle-orm";
+import { NewUser, User, users } from "./db/schema";
 
 /**--------------Helpers--------------**/
 
@@ -21,92 +23,75 @@ function generatePassword() {
   return password;
 }
 
+
 /**--------------User Service--------------**/
 
 class UserService {
   public async createUser(newUser: { email: string, password: string, userName: string, firstName: string, lastName: string }) {
-    const result = await db.query(`
-    INSERT INTO users (email, password, userName, firstName, lastName)
-    VALUES ($1, $2, $3, $4, $5)
-    RETURNING id, email, userName;
-    `, [newUser.email, newUser.password, newUser.userName, newUser.firstName, newUser.lastName]
-    );
-    return result.rows[0];
+    const result = await db.insert(users).values(newUser).returning();
+    return result[0];
   }
 
   public async emailAlreadyInUse(email: string) {
-    const emailAlreadyInUse = await db.query(`
-    SELECT email
-    FROM users
-    WHERE email = $1;
-    `, [email]
-    );
+    const emailAlreadyInUse = await db.select().from(users).where(eq(users.email, email));
 
-    if (emailAlreadyInUse.rows.length > 0) {
+    if (emailAlreadyInUse.length > 0) {
       return true;
     }
     return false;
   }
 
-  public async getUserById(userId: string) {
-    const userExists = await db.query(`
-    SELECT id
-    FROM users
-    WHERE id = $1;
-    `, [userId]
-    );
+  public async getUserById(userId: number) {
+    const userExists = await db.select().from(users).where(eq(users.id, userId));
 
-    if (userExists.rows.length > 0) {
+    if (userExists.length > 0) {
       return true;
     }
     return false;
   }
 
   public async userNameTaken(userName: string) {
-    const userNameTaken = await db.query(`
-    SELECT username
-    FROM users
-    WHERE username = $1;
-    `, [userName]
-    );
+    const userNameTaken = await db.select().from(users).where(eq(users.userName, userName));
 
-    if (userNameTaken.rows.length > 0) {
+    if (userNameTaken.length > 0) {
       return true;
     }
     return false;
   }
 
-  public async updateUser(user: { id: string, email?: string, userName?: string, firstName?: string, lastName?: string }) {
-    const createUpdateQuery = (user: any) => {
-      const fields = Object.keys(user);
-      const values = Object.values(user);
-      let query = `UPDATE users SET `;
-      for (let i = 0; i < fields.length; i++) {
-        if (i === fields.length - 1) {
-          query += `${fields[i]} = $${i + 1} `;
-        } else {
-          query += `${fields[i]} = $${i + 1}, `;
-        }
-      }
-      query += `WHERE id = ${user.id} RETURNING id, email, userName, firstName, lastName;`;
-      return query;
-    }
-
-    const updatedUserResult = await db.query(createUpdateQuery(user), Object.values(user));
-    return updatedUserResult.rows[0];
+  public async updateUser(user: NewUser) {
+    const definedProps = this.filterDefinedProperties(user);
+    const updatedUser = await db.update(users).set(definedProps).where(eq(users.id, Number(user.id))).returning();
+    return updatedUser[0];
   }
 
-  public async getUserByEmail(email: string) {
-    const foundUser = await db.query(`
-    SELECT id, email, userName, firstName, lastName
-    FROM users
-    WHERE email = $1;
-    `, [email.toString()]
-    );
-    if (foundUser.rows.length === 0) {
-      return false;
+  public async getUserByEmail(email: string): Promise<User | null> {
+    const foundUser = await db.select().from(users).where(eq(users.email, email));
+    if (foundUser.length === 0) {
+      return null;
     }
-    return foundUser.rows[0];
+    return foundUser[0];
+  }
+
+  public filterDefinedProperties<T extends object>(obj: T): Partial<T> {
+    const definedProps: Partial<Record<keyof T, T[keyof T]>> = {};
+
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        // Use a type assertion here to tell TypeScript that `key` is indeed a key of T
+        const typedKey = key as keyof T;
+        const value = obj[typedKey];
+
+        if (value !== undefined) {
+          // Now TypeScript knows that definedProps has the same keys as T,
+          // and the values are of the same type as those in T
+          definedProps[typedKey] = value;
+        }
+      }
+    }
+
+    // A type assertion to cast the result back to Partial<T>
+    return definedProps as Partial<T>;
   }
 }
 
@@ -189,7 +174,7 @@ app.post('/users/edit/:userId', async (req: Request, res: Response) => {
   }
 
   try {
-    const userExists = await userService.getUserById(userId);
+    const userExists = await userService.getUserById(Number(userId));
     if (!userExists) {
       return res.status(404).json({
         error: 'UserNotFound',
@@ -264,9 +249,9 @@ app.get('/users', async (req: Request, res: Response) => {
         data: {
           id: user.id,
           email: user.email,
-          userName: user.username,
-          firstName: user.firstname,
-          lastName: user.lastname,
+          userName: user.userName,
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
         },
         success: true,
       });
