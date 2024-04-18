@@ -6,7 +6,8 @@ export const users = pgTable('users', {
     email: varchar('email').unique().notNull(),
     userName: varchar('username').unique().notNull(),
     firstName: varchar('first_name'),
-    lastName: varchar('last_name')
+    lastName: varchar('last_name'),
+    password: varchar('password').notNull(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -24,11 +25,17 @@ export const members = pgTable('members', {
     userId: integer('user_id').notNull().references(() => users.id),
 });
 
+export type Member = typeof members.$inferSelect;
+export type NewMember = typeof members.$inferInsert;
+
 export const memberRelations = relations(members, ({ many }) => ({
     posts: many(posts),
     votes: many(votes),
     comments: many(comments),
 }));
+
+export type Post = typeof posts.$inferSelect;
+export type NewPost = typeof posts.$inferInsert;
 
 export const posts = pgTable('posts', {
     id: serial('id').primaryKey(),
@@ -53,8 +60,11 @@ export const comments = pgTable('comments', {
     text: text('text').notNull(),
     memberId: integer('member_id').notNull().references(() => members.id),
     postId: integer('post_id').notNull().references(() => posts.id),
-    replyComments: integer('reply_to').references((): AnyPgColumn => comments.id),
+    parentCommentId: integer('parent_comment_id').references((): AnyPgColumn => comments.id),
 });
+
+export type Comment = typeof comments.$inferSelect;
+export type NewComment = typeof comments.$inferInsert;
 
 export const commentRelations = relations(comments, ({one}) => ({
     memberPostedBy: one(members, {
@@ -73,6 +83,9 @@ export const votes = pgTable('votes', {
     memberId: integer('member_id').notNull().references(() => members.id),
     postId: integer('post_id').notNull().references(() => posts.id),
 });
+
+export type Vote = typeof votes.$inferSelect;
+export type NewVote = typeof votes.$inferInsert;
 
 export const votesRelations = relations(votes, ({one}) => ({
     memberPostedBy: one(members, {
