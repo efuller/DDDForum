@@ -1,12 +1,20 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+
 import { Button } from "@/components/ui/button.tsx";
 import { Card, CardContent, CardFooter } from "@/components/ui/card.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import arrowImage from "@/assets/arrow.svg";
-import { Link } from "react-router-dom";
+import { apiClient } from "@/shared/apiClient";
 
 type Vote = { id: number, postId: number, voteType: 'Upvote' | 'Downvote' };
-type Comment = {};
-
+type Comment = {
+  id: number;
+  text: string;
+  memberId: number;
+  postId: number;
+  parentCommentId: number | null;
+};
 type Post = {
   title: string;
   dateCreated: string;
@@ -19,6 +27,13 @@ function dateDiff (date1: Date, date2: Date) {
   let dateText = 'days ago';
   const diff = date1.getTime() - date2.getTime();
 
+  // If less than a day, show hours.
+  const diffInHours = Math.abs(Math.round(diff / (1000 * 60 * 60)));
+  if (diffInHours < 24) {
+    dateText = 'hours ago';
+    return diffInHours.toString() + ' ' + dateText;
+  }
+
   if (diff === 1) {
     dateText = 'day ago';
   }
@@ -26,97 +41,7 @@ function dateDiff (date1: Date, date2: Date) {
   return Math.abs(Math.round(diff / (1000 * 60 * 60 * 24))).toString() + ' ' + dateText;
 }
 
-const posts: Post[] = [
-  {
-    title: 'Domain services vs Application services',
-    dateCreated: 'Sat Apr 06 2024 21:02:15 GMT-0400',
-    memberPostedBy: {
-      user: {
-        userName: 'stemmlerjs'
-      }
-    },
-    comments: [{}, {}, {}, {}, {}],
-    votes: [
-      {
-        id: 1,
-        postId: 1,
-        voteType: 'Upvote'
-      },
-      {
-        id: 2,
-        postId: 1,
-        voteType: 'Downvote'
-      },
-      {
-        id: 3,
-        postId: 1,
-        voteType: 'Upvote'
-      }
-    ]
-  },
-  {
-    title: 'Ports and Adapters',
-    dateCreated: 'Fri Apr 05 2024 21:02:56 GMT-0400',
-    memberPostedBy: {
-      user: {
-        userName: 'stemmlerjs'
-      }
-    },
-    comments: [{}],
-    votes: [
-      {
-        id: 1,
-        postId: 2,
-        voteType: 'Upvote'
-      },
-      {
-        id: 2,
-        postId: 2,
-        voteType: 'Downvote'
-      },
-      {
-        id: 3,
-        postId: 2,
-        voteType: 'Upvote'
-      },
-      {
-        id: 3,
-        postId: 2,
-        voteType: 'Upvote'
-      }
-    ]
-  },
-  {
-    title: 'An Introduction to Domain-Driven Design DDD w/ TypeScript',
-    dateCreated: 'Tue Apr 02 2024 21:03:16 GMT-0400',
-    memberPostedBy: {
-      user: {
-        userName: 'stemmlerjs'
-      }
-    },
-    comments: [{}, {}, {}, {}, {}],
-    votes: [
-      {
-        id: 1,
-        postId: 1,
-        voteType: 'Upvote'
-      },
-      {
-        id: 2,
-        postId: 1,
-        voteType: 'Downvote'
-      },
-      {
-        id: 3,
-        postId: 1,
-        voteType: 'Upvote'
-      }
-    ]
-  },
-
-]
-
-const Vote = ({computedVotes}: { computedVotes: number}) => (
+const Vote = ({computedVotes}: { computedVotes: number }) => (
   <div className="flex flex-col justify-between mr-4">
     <div>
       <Button variant="ghost" asChild>
@@ -150,9 +75,9 @@ const PostList = ({posts}: {posts: Post[]}) => {
   return (
     <ul>
       {
-        posts.map((post) => (
-          <li className="flex mb-4" key={post.dateCreated}>
-            <Vote computedVotes={9}/>
+        posts.map((post, i) => (
+          <li className="flex mb-4" key={i}>
+            <Vote computedVotes={post.votes.length}/>
             <Card className="flex-1">
               <CardContent className="text-left pb-4 pt-4">
                 <h2>{post.title}</h2>
@@ -178,10 +103,18 @@ const PostList = ({posts}: {posts: Post[]}) => {
 }
 
 export const MainPage = () => {
+  const [posts, setPosts] = useState<Post[]>([]);
+
+  useEffect(() => {
+    apiClient.getRecentPosts().then((result) => {
+      setPosts(result.data);
+    });
+  }, []);
+
   return (
     <div>
       <PostsViewSwitcher />
-      <PostList posts={posts}/>
+      <PostList posts={posts} />
     </div>
     )
 }

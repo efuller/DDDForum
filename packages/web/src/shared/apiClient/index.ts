@@ -17,5 +17,15 @@ export const apiClient = {
     }
 
     return response.json();
+  },
+
+  async getRecentPosts() {
+    const response = await fetch(`${baseUrl}/posts?sort=recent`);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch recent posts');
+    }
+
+    return response.json();
   }
 }
