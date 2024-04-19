@@ -1,8 +1,9 @@
 import { Link, Outlet } from "react-router-dom";
-import { Button } from "@/components/ui/button.tsx";
-import LogoImage from '../assets/dddforumlogo.png';
 import { Toaster } from "sonner";
-import { useUserContext } from "@/shared/contexts/userContext.tsx";
+
+import { Button } from "@/components/ui/button.tsx";
+import { UserData, useUserContext } from "@/shared/contexts/userContext.tsx";
+import LogoImage from '../assets/dddforumlogo.png';
 
 const Logo = () => (
   <div>
@@ -18,27 +19,37 @@ const TitleAndSubmission = () => (
   </div>
 );
 
-const HeaderActionButton = ({ user }: { user: any }) => (
-  <div>
-    {
-      user && user.userName ? (
-        <Button>
-          {`${user.userName} / Logout`}
-        </Button>
-      ) : (
-        <Button asChild>
-          <Link to='/join'>Join</Link>
-        </Button>
-      )
-    }
-  </div>
-);
+const HeaderActionButton = ({ user }: { user: UserData | null }) => {
+  const { setUser } = useUserContext();
 
-const shouldShowActionButton = (user: any) => {
+  return (
+    <div>
+      {
+        user && user.userName ? (
+          <Button onClick={() => setUser({
+            id: 0,
+            userName: '',
+            email: '',
+            firstName: '',
+            lastName: ''
+          })}>
+            {`${user.userName} / Logout`}
+          </Button>
+        ) : (
+          <Button asChild>
+            <Link to='/join'>Join</Link>
+          </Button>
+        )
+      }
+    </div>
+  )
+};
+
+const shouldShowActionButton = (user: UserData) => {
   return user && user.userName;
 }
 
-export const Header = ({user}: {user: any}) => (
+export const Header = ({user}: { user: UserData }) => (
   <header className="p-4 border flex items-center content-between flex-wrap">
     <Logo/>
     <TitleAndSubmission/>

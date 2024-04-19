@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+
 import { RegistrationForm, RegistrationFormData } from "@/components/registrationForm.tsx";
 import { apiClient } from "@/shared/apiClient";
 import { useUserContext } from "@/shared/contexts/userContext.tsx";
