@@ -145,6 +145,15 @@ app.post('/users/new', async (req: Request, res: Response) => {
     return;
   }
 
+  if (!isValidEmail(newUser.email)) {
+    res.status(400).json({
+      error: 'ValidationError',
+      data: undefined,
+      success: false,
+    });
+    return;
+  }
+
   try {
     const userNameTaken = await userService.userNameTaken(newUser.userName);
     if (userNameTaken) {
