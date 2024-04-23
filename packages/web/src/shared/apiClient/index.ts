@@ -12,10 +12,6 @@ export const apiClient = {
       body: JSON.stringify(registrationData),
     });
 
-    if (!response.ok) {
-      throw new Error('Failed to register user');
-    }
-
     return response.json();
   },
 

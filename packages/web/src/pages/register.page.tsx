@@ -16,14 +16,17 @@ export const RegisterPage = () => {
       setLoading(true);
       const result = await apiClient.register(data);
 
-      if (result.success) { toast.success('Account registered successfully');
+      if (result.success) {
+        toast.success('Account registered successfully');
         setUser(result.data);
+
         setTimeout(() => {
           setLoading(false);
           navigate('/');
         }, 3000);
       } else {
-        toast.error('There was an error registering the account');
+        toast.error(result.error);
+        setLoading(false);
       }
     } catch (e) {
       toast.error('There was an error registering the account');
