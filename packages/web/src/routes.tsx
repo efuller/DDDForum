@@ -9,7 +9,7 @@ export const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { path: "/", element: <MainPage /> },
-      { path: "/join", element: <RegisterPage /> },
+      { path: "/register", element: <RegisterPage /> },
     ],
   },
 ]);

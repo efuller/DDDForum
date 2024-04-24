@@ -29,7 +29,7 @@ const HeaderActionButton = ({user}: { user: UserData | null }) => {
           </Button>
         ) : (
           <Button asChild>
-            <Link to='/join'>Join</Link>
+            <Link to='/register'>Join</Link>
           </Button>
         )
       }
