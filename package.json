@@ -10,7 +10,12 @@
     "api:test": "jest --selectProjects api -c jest.config.ts",
     "web:build": "npm run build -w packages/web",
     "web:dev": "npm run dev -w packages/web",
-    "web:test": "jest --selectProjects web -c jest.config.ts"
+    "web:test": "jest --selectProjects web -c jest.config.ts",
+    "db:push": "npm run db:push -w packages/api",
+    "db:reset": "npm run db:reset -w packages/api",
+    "db:seed": "npm run db:seed -w packages/api",
+    "db:studio": "npm run db:studio -w packages/api",
+    "db:up": "docker-compose up -d"
   },
   "workspaces": [
     "packages/*"
