@@ -1,6 +1,7 @@
 import { Client } from 'pg';
 import { getDBUri } from './config';
 import { drizzle } from "drizzle-orm/node-postgres";
+import * as schema from './db/schema';
 
 const client = new Client({
     connectionString: getDBUri()
@@ -14,5 +15,5 @@ client.connect((err) => {
     }
 });
 
-const db = drizzle(client);
+const db = drizzle(client, { schema });
 export { db };

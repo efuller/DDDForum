@@ -2,8 +2,8 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import { PORT } from './config';
 import { db } from './db';
-import { eq } from "drizzle-orm";
-import { NewUser, User, users } from "./db/schema";
+import { desc, eq } from "drizzle-orm";
+import { NewUser, posts, User, users, } from "./db/schema";
 
 /**--------------Helpers--------------**/
 
@@ -23,11 +23,35 @@ function generatePassword() {
   return password;
 }
 
+/**--------------Post Service--------------**/
+
+class PostService {
+  public async getRecentPosts()  {
+    const postsWithVotes = await db
+      .query
+      .posts
+      .findMany({
+        orderBy: [desc(posts.dateCreated)],
+        with: {
+          memberPostedBy: {
+            with: {
+              user: true
+            }
+          },
+          votes: true,
+          comments: true
+        },
+      })
+
+    return postsWithVotes;
+  }
+}
+
 
 /**--------------User Service--------------**/
 
 class UserService {
-  public async createUser(newUser: { email: string, password: string, userName: string, firstName: string, lastName: string }) {
+  public async createUser(newUser: { email: string, password: string, userName: string, firstName?: string, lastName?: string }) {
     const result = await db.insert(users).values(newUser).returning();
     return result[0];
   }
@@ -113,6 +137,15 @@ app.post('/users/new', async (req: Request, res: Response) => {
   }
 
   if (!newUser.email || !newUser.userName) {
+    res.status(400).json({
+      error: 'ValidationError',
+      data: undefined,
+      success: false,
+    });
+    return;
+  }
+
+  if (!isValidEmail(newUser.email)) {
     res.status(400).json({
       error: 'ValidationError',
       data: undefined,
@@ -259,6 +292,35 @@ app.get('/users', async (req: Request, res: Response) => {
   } catch (error: unknown) {
     return res.status(500).json({
       error: 'ServerError',
+      data: undefined,
+      success: false,
+    });
+  }
+});
+
+app.get('/posts', async (req: Request, res: Response) => {
+  try {
+    const { sort } = req.query;
+
+    if (sort !== 'recent' ) {
+      return res.status(400).json({
+        error: 'ClientError',
+        data: undefined,
+        success: false,
+      })
+    }
+
+    const posts = await new PostService().getRecentPosts();
+
+    res.status(200).json({
+      error: undefined,
+      data: posts,
+      success: true,
+    });
+  } catch (error: unknown) {
+    console.log('posts', error);
+    return res.status(500).json({
+      error: error,
       data: undefined,
       success: false,
     });

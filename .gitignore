@@ -2,6 +2,7 @@ node_modules
 build
 db_data
 .env**
+!*.env.development.example
 users.http
 notes.md
 dist
